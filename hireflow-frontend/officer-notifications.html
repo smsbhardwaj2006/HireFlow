@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("officer", "officer-notifications.html");
+
+    const icons = { drive: "🚀", deadline: "⏰", interview: "🗓️", result: "🎉" };
+
+    function renderPage() {
+      const notifications = Store.notifications();
+      document.getElementById("page-content").innerHTML = `
+        <div class="dash-topbar">
+          <div><h1>Notifications</h1><p class="sub">Send announcements to all students</p></div>
+        </div>
+
+        <div class="widget-grid-2">
+          <div class="widget-card">
+            <h3>Sent announcements</h3>
+            ${notifications.map(n => `
+              <div class="notif-item">
+                <div class="notif-icon ${n.type}">${icons[n.type]}</div>
+                <div class="notif-content">
+                  <h4>${n.title}</h4>
+                  <p>${n.message}</p>
+                  <div class="time">${UI.formatDate(n.date)}</div>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+
+          <div class="widget-card">
+            <h3>Send new announcement</h3>
+            <form id="notify-form">
+              <div class="form-field">
+                <label>Type</label>
+                <select id="n-type">
+                  <option value="drive">New Drive</option>
+                  <option value="deadline">Deadline Reminder</option>
+                  <option value="interview">Interview Update</option>
+                  <option value="result">Placement Result</option>
+                </select>
+              </div>
+              <div class="form-field"><label>Title</label><input type="text" id="n-title" required></div>
+              <div class="form-field"><label>Message</label><textarea id="n-message" rows="3" required></textarea></div>
+              <button type="submit" class="btn btn-accent btn-block">Send to all students</button>
+            </form>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("notify-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const notifications = Store.notifications();
+        notifications.unshift({
+          id: "n" + Date.now(),
+          type: document.getElementById("n-type").value,
+          title: document.getElementById("n-title").value.trim(),
+          message: document.getElementById("n-message").value.trim(),
+          date: new Date().toISOString().slice(0, 10),
+          audience: "students",
+        });
+        Store.setNotifications(notifications);
+        UI.toast("Announcement sent to all students", "success");
+        renderPage();
+      });
+    }
+
+    renderPage();
+  </script>
+</body>
+</html>

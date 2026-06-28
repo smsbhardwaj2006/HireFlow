@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Details — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("student", "student-jobs.html");
+
+    const student = Auth.currentStudent();
+    const params = new URLSearchParams(window.location.search);
+    const job = Jobs.byId(params.get("id"));
+    const root = document.getElementById("page-content");
+
+    if (!job || !job.id) {
+      root.innerHTML = `<div class="empty-state"><div class="emoji">📭</div><h3>Job not found</h3><a href="student-jobs.html" class="btn btn-accent" style="margin-top:14px;">Back to listings</a></div>`;
+    } else {
+      renderJobDetail();
+    }
+
+    function renderJobDetail() {
+      const eligible = Jobs.isEligible(job, student);
+      const applied = Applications.hasApplied(student.id, job.id);
+
+      root.innerHTML = `
+        <div class="dash-topbar">
+          <div>
+            <a href="student-jobs.html" style="font-size:0.84rem; color:var(--slate);">← Back to listings</a>
+            <h1 style="margin-top:8px;">${job.title}</h1>
+            <p class="sub">${job.company.logo} ${job.company.name} · ${job.location}</p>
+          </div>
+          <div>
+            ${applied ? `<span class="status-pill applied" style="font-size:0.86rem; padding:8px 16px;">Already applied</span>` :
+              !eligible ? `<button class="btn btn-outline" disabled>Not eligible</button>` :
+              `<button class="btn btn-accent" id="apply-btn">Apply now</button>`
+            }
+          </div>
+        </div>
+
+        <div class="widget-grid-2">
+          <div>
+            <div class="widget-card">
+              <h3>Job Description</h3>
+              <p style="font-size:0.9rem; color:var(--ink); line-height:1.7;">${job.description}</p>
+            </div>
+            <div class="widget-card">
+              <h3>Eligibility Criteria</h3>
+              <div>
+                <span class="eligibility-tag">Min CGPA: ${job.eligibility.minCgpa}</span>
+                <span class="eligibility-tag">Branches: ${job.eligibility.branches.join(", ")}</span>
+              </div>
+              ${!eligible ? `<p style="color:var(--red); font-size:0.84rem; margin-top:12px; font-weight:600;">You don't currently meet the eligibility criteria for this role.</p>` : ""}
+            </div>
+          </div>
+          <div>
+            <div class="widget-card">
+              <h3>Key Details</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:0.88rem;">
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--slate);">Package</span><strong>${UI.formatCurrency(job.salary)}</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--slate);">Type</span><strong>${job.type}</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--slate);">Location</span><strong>${job.location}</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--slate);">Apply by</span><strong>${UI.formatDate(job.deadline)}</strong></div>
+                <div style="display:flex; justify-content:space-between;"><span style="color:var(--slate);">Drive date</span><strong>${UI.formatDate(job.driveDate)}</strong></div>
+              </div>
+            </div>
+            <div class="widget-card">
+              <h3>About ${job.company.name}</h3>
+              <p style="font-size:0.86rem; color:var(--slate); line-height:1.6;">${job.company.description}</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const applyBtn = document.getElementById("apply-btn");
+      if (applyBtn) {
+        applyBtn.addEventListener("click", () => {
+          if (!student.resumeName) {
+            UI.toast("Upload your resume before applying", "error");
+            return;
+          }
+          Applications.apply(student.id, job.id);
+          UI.toast("Application submitted!", "success");
+          setTimeout(renderJobDetail, 400);
+        });
+      }
+    }
+  </script>
+</body>
+</html>

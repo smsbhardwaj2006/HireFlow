@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Officer Dashboard — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("officer", "officer-dashboard.html");
+
+    const students = Store.students();
+    const companies = Store.companies();
+    const drives = Store.drives();
+    const apps = Store.applications();
+    const selected = apps.filter(a => a.status === "selected");
+    const placementRate = students.length ? Math.round((selected.length / students.length) * 100) : 0;
+
+    const recentActivity = [
+      { text: "Verdant Internship Drive results published", time: "2 hours ago" },
+      { text: `${apps.filter(a=>a.status==='applied').length} new applications submitted today`, time: "5 hours ago" },
+      { text: "Quanta Robotics registered (pending approval)", time: "1 day ago" },
+    ];
+
+    document.getElementById("page-content").innerHTML = `
+      <div class="dash-topbar">
+        <div><h1>Placement Officer Dashboard</h1><p class="sub">Overview of the entire placement cycle</p></div>
+      </div>
+
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="icon-wrap" style="background:#E8F3FF;">🎓</div>
+          <div class="label">Total Students</div>
+          <div class="value">${students.length}</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon-wrap" style="background:#E6F4ED;">🏢</div>
+          <div class="label">Registered Companies</div>
+          <div class="value">${companies.length}</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon-wrap" style="background:#FDF1E2;">🚀</div>
+          <div class="label">Placement Drives</div>
+          <div class="value">${drives.length}</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon-wrap" style="background:#EDE7FB;">📈</div>
+          <div class="label">Placement Rate</div>
+          <div class="value">${placementRate}%</div>
+        </div>
+      </div>
+
+      <div class="widget-grid-2">
+        <div class="widget-card">
+          <h3>Companies awaiting approval</h3>
+          ${companies.filter(c => c.status === "pending").length === 0 ? `<p style="color:var(--slate); font-size:0.86rem;">All companies are approved.</p>` :
+            companies.filter(c => c.status === "pending").map(c => `
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(15,42,74,0.06);">
+                <div><strong>${c.name}</strong><div style="font-size:0.78rem; color:var(--slate);">${c.email}</div></div>
+                <a href="officer-companies.html" class="btn btn-accent btn-sm">Review</a>
+              </div>
+            `).join("")
+          }
+        </div>
+
+        <div class="widget-card">
+          <h3>Recent activity</h3>
+          ${recentActivity.map(a => `
+            <div style="padding:12px 0; border-bottom:1px solid rgba(15,42,74,0.06); font-size:0.86rem;">
+              <div>${a.text}</div>
+              <div style="font-size:0.76rem; color:var(--slate); margin-top:3px;">${a.time}</div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  </script>
+</body>
+</html>

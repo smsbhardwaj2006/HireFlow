@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Registration — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="public-header">
+    <div class="container">
+      <a href="index.html" class="logo"><span class="mark">H</span> HireFlow</a>
+      <nav class="public-nav"><a href="index.html">Home</a></nav>
+    </div>
+  </header>
+
+  <main class="auth-wrapper">
+    <div class="auth-card" style="max-width:500px;">
+      <span class="auth-role-badge company">🏢 Company Registration</span>
+      <h2>Register your company</h2>
+      <p class="sub">Post jobs and recruit from this campus once approved</p>
+
+      <form id="register-form" novalidate>
+        <div class="form-field">
+          <label for="cname">Company name</label>
+          <input type="text" id="cname" required>
+          <div class="error-msg"></div>
+        </div>
+        <div class="form-field">
+          <label for="email">Work email</label>
+          <input type="email" id="email" required>
+          <div class="error-msg"></div>
+        </div>
+        <div class="form-field">
+          <label for="website">Website</label>
+          <input type="text" id="website" placeholder="company.com">
+        </div>
+        <div class="form-field">
+          <label for="description">Company description</label>
+          <textarea id="description" rows="3" placeholder="What does your company do?" required></textarea>
+          <div class="error-msg"></div>
+        </div>
+        <div class="form-field">
+          <label for="password">Password</label>
+          <input type="password" id="password" required minlength="6">
+          <div class="error-msg"></div>
+        </div>
+        <button type="submit" class="btn btn-accent btn-block">Register company</button>
+      </form>
+
+      <p class="auth-switch">Already registered? <a href="login-company.html">Sign in</a></p>
+    </div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.getElementById("register-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const fields = {
+        cname: document.getElementById("cname"),
+        email: document.getElementById("email"),
+        description: document.getElementById("description"),
+        password: document.getElementById("password"),
+      };
+      let valid = true;
+      Object.values(fields).forEach(f => f.closest(".form-field").querySelector(".error-msg").textContent = "");
+
+      if (fields.cname.value.trim().length < 2) { fields.cname.closest(".form-field").querySelector(".error-msg").textContent = "Enter your company name."; valid = false; }
+      if (!/^\S+@\S+\.\S+$/.test(fields.email.value.trim())) { fields.email.closest(".form-field").querySelector(".error-msg").textContent = "Enter a valid email."; valid = false; }
+      if (fields.description.value.trim().length < 10) { fields.description.closest(".form-field").querySelector(".error-msg").textContent = "Add a short description (10+ characters)."; valid = false; }
+      if (fields.password.value.length < 6) { fields.password.closest(".form-field").querySelector(".error-msg").textContent = "Password must be at least 6 characters."; valid = false; }
+
+      if (!valid) return;
+
+      const result = Auth.registerCompany({
+        name: fields.cname.value.trim(),
+        email: fields.email.value.trim(),
+        password: fields.password.value,
+        website: document.getElementById("website").value.trim(),
+        description: fields.description.value.trim(),
+      });
+
+      if (result.ok) {
+        UI.toast("Registered! Awaiting officer approval.", "success");
+        setTimeout(() => window.location.href = "company-dashboard.html", 700);
+      } else {
+        fields.email.closest(".form-field").querySelector(".error-msg").textContent = result.error;
+        UI.toast(result.error, "error");
+      }
+    });
+  </script>
+</body>
+</html>

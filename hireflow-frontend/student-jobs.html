@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Listings — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div class="dash-topbar">
+        <div><h1>Job Listings</h1><p class="sub">Browse open roles from partner companies</p></div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="search-input" placeholder="Search by title or company...">
+        </div>
+        <div class="toolbar-filters">
+          <select class="filter-select" id="eligibility-filter">
+            <option value="all">All jobs</option>
+            <option value="eligible">Eligible only</option>
+          </select>
+          <select class="filter-select" id="type-filter">
+            <option value="">All types</option>
+            <option value="Full-time">Full-time</option>
+            <option value="Internship">Internship</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="job-grid" id="job-grid"></div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("student", "student-jobs.html");
+
+    const student = Auth.currentStudent();
+
+    function jobCardHTML(job) {
+      const eligible = Jobs.isEligible(job, student);
+      const applied = student && Applications.hasApplied(student.id, job.id);
+      return `
+        <div class="job-card">
+          <div class="job-card-head">
+            <div>
+              <div class="company-name">${job.company.logo} ${job.company.name}</div>
+              <h3>${job.title}</h3>
+            </div>
+            ${!eligible ? `<span class="status-pill rejected">Not eligible</span>` : (applied ? `<span class="status-pill applied">Applied</span>` : "")}
+          </div>
+          <div class="meta-row">
+            <span>📍 ${job.location}</span>
+            <span>💼 ${job.type}</span>
+          </div>
+          <div>
+            <span class="eligibility-tag">Min CGPA ${job.eligibility.minCgpa}</span>
+            <span class="eligibility-tag">${job.eligibility.branches.join(", ")}</span>
+          </div>
+          <div class="package" style="margin-top:10px;">${UI.formatCurrency(job.salary)}</div>
+          <div class="job-card-footer">
+            <span class="deadline">Apply by ${UI.formatDate(job.deadline)}</span>
+            <a href="student-job-detail.html?id=${job.id}" class="btn btn-primary btn-sm">View details</a>
+          </div>
+        </div>
+      `;
+    }
+
+    function applyFilters() {
+      const query = document.getElementById("search-input").value.trim().toLowerCase();
+      const eligibilityFilter = document.getElementById("eligibility-filter").value;
+      const typeFilter = document.getElementById("type-filter").value;
+
+      let results = Jobs.all().filter(job => {
+        if (query && !job.title.toLowerCase().includes(query) && !job.company.name.toLowerCase().includes(query)) return false;
+        if (eligibilityFilter === "eligible" && !Jobs.isEligible(job, student)) return false;
+        if (typeFilter && job.type !== typeFilter) return false;
+        return true;
+      });
+
+      const grid = document.getElementById("job-grid");
+      if (results.length === 0) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="emoji">🔍</div><h3>No jobs found</h3><p>Try adjusting your filters.</p></div>`;
+        return;
+      }
+      grid.innerHTML = results.map(jobCardHTML).join("");
+    }
+
+    document.getElementById("search-input").addEventListener("input", applyFilters);
+    document.getElementById("eligibility-filter").addEventListener("change", applyFilters);
+    document.getElementById("type-filter").addEventListener("change", applyFilters);
+
+    applyFilters();
+  </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("student", "student-notifications.html");
+
+    const notifications = Store.notifications().filter(n => n.audience === "students");
+    const icons = { drive: "🚀", deadline: "⏰", interview: "🗓️", result: "🎉" };
+
+    document.getElementById("page-content").innerHTML = `
+      <div class="dash-topbar">
+        <div><h1>Notifications</h1><p class="sub">Announcements from companies and placement officers</p></div>
+      </div>
+
+      <div class="widget-card">
+        ${notifications.length === 0 ? `<p style="color:var(--slate); font-size:0.88rem;">No notifications yet.</p>` :
+          notifications.map(n => `
+            <div class="notif-item">
+              <div class="notif-icon ${n.type}">${icons[n.type]}</div>
+              <div class="notif-content">
+                <h4>${n.title}</h4>
+                <p>${n.message}</p>
+                <div class="time">${UI.formatDate(n.date)}</div>
+              </div>
+            </div>
+          `).join("")
+        }
+      </div>
+    `;
+  </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Dashboard — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("company", "company-dashboard.html");
+
+    const company = Auth.currentCompany();
+    const myJobs = company ? Store.jobs().filter(j => j.companyId === company.id) : [];
+    const myJobIds = myJobs.map(j => j.id);
+    const allApps = Store.applications().filter(a => myJobIds.includes(a.jobId));
+    const shortlisted = allApps.filter(a => ["shortlisted", "interview", "selected"].includes(a.status));
+    const myInterviews = Store.interviews().filter(i => i.companyId === company?.id);
+
+    const pendingApproval = company && company.status === "pending";
+
+    document.getElementById("page-content").innerHTML = `
+      <div class="dash-topbar">
+        <div>
+          <h1>${company ? company.name : "Company"} Dashboard</h1>
+          <p class="sub">Overview of your recruitment activity</p>
+        </div>
+      </div>
+
+      ${pendingApproval ? `
+        <div class="widget-card" style="border-left:4px solid var(--amber); background:#FFFBF3;">
+          <h3 style="display:flex; align-items:center; gap:8px;">⏳ Registration pending approval</h3>
+          <p style="font-size:0.86rem; color:var(--slate);">A placement officer needs to approve your company before your job postings become visible to students. You can still set up your profile and draft jobs in the meantime.</p>
+        </div>
+      ` : ""}
+
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="icon-wrap" style="background:#E8F3FF;">💼</div>
+          <div class="label">Active Job Posts</div>
+          <div class="value">${myJobs.length}</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon-wrap" style="background:#FDF1E2;">📋</div>
+          <div class="label">Total Applications</div>
+          <div class="value">${allApps.length}</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon-wrap" style="background:#EDE7FB;">⭐</div>
+          <div class="label">Shortlisted Candidates</div>
+          <div class="value">${shortlisted.length}</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon-wrap" style="background:#E6F4ED;">🗓️</div>
+          <div class="label">Interviews Scheduled</div>
+          <div class="value">${myInterviews.length}</div>
+        </div>
+      </div>
+
+      <div class="widget-card">
+        <h3>Your job postings</h3>
+        ${myJobs.length === 0 ? `<p style="color:var(--slate); font-size:0.86rem;">No jobs posted yet.</p><a href="company-jobs.html" class="btn btn-accent btn-sm" style="margin-top:10px;">Post a job</a>` : `
+          <table class="data-table">
+            <thead><tr><th>Title</th><th>Location</th><th>Package</th><th>Applicants</th><th>Deadline</th></tr></thead>
+            <tbody>
+              ${myJobs.map(job => `
+                <tr>
+                  <td><strong>${job.title}</strong></td>
+                  <td>${job.location}</td>
+                  <td>${UI.formatCurrency(job.salary)}</td>
+                  <td>${allApps.filter(a => a.jobId === job.id).length}</td>
+                  <td>${UI.formatDate(job.deadline)}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `}
+      </div>
+    `;
+  </script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Applications — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("student", "student-applications.html");
+
+    const student = Auth.currentStudent();
+    const apps = student ? Applications.forStudent(student.id) : [];
+
+    document.getElementById("page-content").innerHTML = `
+      <div class="dash-topbar">
+        <div><h1>My Applications</h1><p class="sub">${apps.length} application${apps.length === 1 ? "" : "s"} submitted</p></div>
+      </div>
+
+      ${apps.length === 0 ? `
+        <div class="empty-state"><div class="emoji">📋</div><h3>No applications yet</h3><p>Browse jobs and apply to roles you're eligible for.</p><br><a href="student-jobs.html" class="btn btn-accent">Browse jobs</a></div>
+      ` : apps.map(app => `
+        <div class="widget-card">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+            <div>
+              <div style="font-size:0.8rem; color:var(--slate);">${app.job.company.logo} ${app.job.company.name}</div>
+              <h3 style="margin-top:4px;">${app.job.title}</h3>
+              <div style="font-size:0.8rem; color:var(--slate); margin-top:4px;">Applied on ${UI.formatDate(app.appliedDate)}</div>
+            </div>
+            <a href="student-job-detail.html?id=${app.job.id}" class="btn btn-outline btn-sm">View job</a>
+          </div>
+          ${UI.statusPipelineHTML(app.status)}
+        </div>
+      `).join("")}
+    `;
+  </script>
+</body>
+</html>

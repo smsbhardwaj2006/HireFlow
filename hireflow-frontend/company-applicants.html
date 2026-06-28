@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Applicants — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("company", "company-applicants.html");
+
+    const company = Auth.currentCompany();
+    const myJobIds = Store.jobs().filter(j => j.companyId === company.id).map(j => j.id);
+
+    const statusLabels = { applied: "Applied", review: "Under Review", shortlisted: "Shortlisted", interview: "Interview Scheduled", selected: "Selected", rejected: "Rejected" };
+    const statusClasses = { applied: "applied", review: "review", shortlisted: "shortlisted", interview: "interview", selected: "selected", rejected: "rejected" };
+
+    function renderApplicantsPage() {
+      const jobFilter = document.getElementById("job-filter")?.value || "all";
+      let allApps = myJobIds.flatMap(jobId => Applications.forJob(jobId).map(a => ({ ...a, job: Store.jobs().find(j => j.id === jobId) })));
+      if (jobFilter !== "all") allApps = allApps.filter(a => a.jobId === jobFilter);
+
+      const myJobs = Store.jobs().filter(j => j.companyId === company.id);
+
+      document.getElementById("page-content").innerHTML = `
+        <div class="dash-topbar">
+          <div><h1>View Applicants</h1><p class="sub">${allApps.length} application${allApps.length === 1 ? "" : "s"} across all your jobs</p></div>
+        </div>
+
+        <div class="toolbar">
+          <select class="filter-select" id="job-filter">
+            <option value="all">All jobs</option>
+            ${myJobs.map(j => `<option value="${j.id}" ${j.id === jobFilter ? "selected" : ""}>${j.title}</option>`).join("")}
+          </select>
+        </div>
+
+        ${allApps.length === 0 ? `<div class="empty-state"><div class="emoji">👥</div><h3>No applicants yet</h3></div>` : `
+          <table class="data-table">
+            <thead><tr><th>Candidate</th><th>Job</th><th>CGPA</th><th>Branch</th><th>Status</th><th>Resume</th><th></th></tr></thead>
+            <tbody>
+              ${allApps.map(app => `
+                <tr>
+                  <td class="avatar-cell">
+                    <div class="avatar-circle">${UI.initials(app.student.name)}</div>
+                    <div>
+                      <div style="font-weight:600;">${app.student.name}</div>
+                      <div style="font-size:0.76rem; color:var(--slate);">${app.student.email}</div>
+                    </div>
+                  </td>
+                  <td>${app.job.title}</td>
+                  <td>${app.student.cgpa}</td>
+                  <td>${app.student.branch}</td>
+                  <td><span class="status-pill ${statusClasses[app.status]}">${statusLabels[app.status]}</span></td>
+                  <td>${app.student.resumeName ? `<button data-view-resume="${app.student.name}">📄 View</button>` : "—"}</td>
+                  <td class="table-actions">
+                    ${app.status !== "selected" && app.status !== "rejected" ? `
+                      <button data-advance="${app.id}">Advance</button>
+                      <button class="danger" data-reject="${app.id}">Reject</button>
+                    ` : ""}
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `}
+      `;
+
+      const filterEl = document.getElementById("job-filter");
+      if (filterEl) filterEl.addEventListener("change", renderApplicantsPage);
+
+      document.querySelectorAll("[data-view-resume]").forEach(btn => {
+        btn.addEventListener("click", () => UI.toast(`Demo mode: would download ${btn.dataset.viewResume}'s resume PDF`, "success"));
+      });
+
+      document.querySelectorAll("[data-advance]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const app = Store.applications().find(a => a.id === btn.dataset.advance);
+          const flow = ["applied", "review", "shortlisted", "interview", "selected"];
+          const currentIdx = flow.indexOf(app.status);
+          if (currentIdx < flow.length - 1) {
+            Applications.updateStatus(app.id, flow[currentIdx + 1]);
+            UI.toast(`Moved to ${statusLabels[flow[currentIdx + 1]]}`, "success");
+            renderApplicantsPage();
+          }
+        });
+      });
+
+      document.querySelectorAll("[data-reject]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          Applications.updateStatus(btn.dataset.reject, "rejected");
+          UI.toast("Candidate rejected", "success");
+          renderApplicantsPage();
+        });
+      });
+    }
+
+    renderApplicantsPage();
+  </script>
+</body>
+</html>

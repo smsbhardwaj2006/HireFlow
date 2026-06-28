@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Login — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="public-header">
+    <div class="container">
+      <a href="index.html" class="logo"><span class="mark">H</span> HireFlow</a>
+      <nav class="public-nav"><a href="index.html">Home</a></nav>
+    </div>
+  </header>
+
+  <main class="auth-wrapper">
+    <div class="auth-card">
+      <span class="auth-role-badge student">🎓 Student Portal</span>
+      <h2>Welcome back</h2>
+      <p class="sub">Sign in to track your applications and interviews</p>
+
+      <form id="login-form" novalidate>
+        <div class="form-field">
+          <label for="email">Email</label>
+          <input type="email" id="email" value="ananya@college.edu" required>
+          <div class="error-msg"></div>
+        </div>
+        <div class="form-field">
+          <label for="password">Password</label>
+          <input type="password" id="password" value="demo1234" required>
+          <div class="error-msg"></div>
+        </div>
+        <button type="submit" class="btn btn-accent btn-block">Sign in</button>
+      </form>
+
+      <p class="auth-switch">New here? <a href="register-student.html">Create a student account</a></p>
+      <div class="role-switch-links">
+        <a href="login-company.html">Company login</a>
+        <a href="login-officer.html">Officer login</a>
+      </div>
+      <p style="text-align:center; font-size:0.76rem; color:var(--slate); margin-top:18px;">
+        Demo credentials are pre-filled — just click Sign in.
+      </p>
+    </div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.getElementById("login-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const result = Auth.login(email, password, "student");
+      if (result.ok) {
+        UI.toast("Welcome back!", "success");
+        setTimeout(() => window.location.href = "student-dashboard.html", 500);
+      } else {
+        document.getElementById("password").closest(".form-field").querySelector(".error-msg").textContent = result.error;
+        UI.toast(result.error, "error");
+      }
+    });
+  </script>
+</body>
+</html>

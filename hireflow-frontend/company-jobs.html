@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Jobs — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="job-modal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="modal-title">Post a new job</h3>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <form id="job-form">
+        <input type="hidden" id="job-id">
+        <div class="form-field"><label>Job title</label><input type="text" id="f-title" required></div>
+        <div class="form-row">
+          <div class="form-field"><label>Location</label><input type="text" id="f-location" required></div>
+          <div class="form-field"><label>Type</label>
+            <select id="f-type"><option>Full-time</option><option>Internship</option></select>
+          </div>
+        </div>
+        <div class="form-field"><label>Package (₹ per year for full-time, per month for internship)</label><input type="number" id="f-salary" required min="0"></div>
+        <div class="form-row">
+          <div class="form-field"><label>Min CGPA required</label><input type="number" id="f-mincgpa" min="0" max="10" step="0.1" required></div>
+          <div class="form-field"><label>Application deadline</label><input type="date" id="f-deadline" required></div>
+        </div>
+        <div class="form-field">
+          <label>Eligible branches</label>
+          <div id="branch-checkboxes" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:6px;"></div>
+        </div>
+        <div class="form-field"><label>Description</label><textarea id="f-description" rows="3" required></textarea></div>
+        <button type="submit" class="btn btn-accent btn-block">Save job</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("company", "company-jobs.html");
+
+    const company = Auth.currentCompany();
+
+    function myJobs() { return Store.jobs().filter(j => j.companyId === company.id); }
+
+    function renderJobsPage() {
+      const jobs = myJobs();
+      document.getElementById("page-content").innerHTML = `
+        <div class="dash-topbar">
+          <div><h1>Manage Jobs</h1><p class="sub">${jobs.length} job${jobs.length === 1 ? "" : "s"} posted</p></div>
+          <button class="btn btn-accent" id="add-job-btn">+ Post new job</button>
+        </div>
+
+        ${jobs.length === 0 ? `<div class="empty-state"><div class="emoji">💼</div><h3>No jobs posted yet</h3><p>Post your first opening to start receiving applications.</p></div>` : `
+          <table class="data-table">
+            <thead><tr><th>Title</th><th>Location</th><th>Type</th><th>Package</th><th>Deadline</th><th></th></tr></thead>
+            <tbody>
+              ${jobs.map(job => `
+                <tr>
+                  <td><strong>${job.title}</strong></td>
+                  <td>${job.location}</td>
+                  <td>${job.type}</td>
+                  <td>${UI.formatCurrency(job.salary)}</td>
+                  <td>${UI.formatDate(job.deadline)}</td>
+                  <td class="table-actions">
+                    <button data-edit="${job.id}">Edit</button>
+                    <button class="danger" data-delete="${job.id}">Delete</button>
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `}
+      `;
+
+      document.getElementById("add-job-btn").addEventListener("click", () => openModal());
+      document.querySelectorAll("[data-edit]").forEach(btn => btn.addEventListener("click", () => openModal(btn.dataset.edit)));
+      document.querySelectorAll("[data-delete]").forEach(btn => btn.addEventListener("click", () => {
+        const jobs = Store.jobs().filter(j => j.id !== btn.dataset.delete);
+        Store.setJobs(jobs);
+        UI.toast("Job deleted", "success");
+        renderJobsPage();
+      }));
+    }
+
+    const modal = document.getElementById("job-modal");
+    const branchBoxesEl = document.getElementById("branch-checkboxes");
+    branchBoxesEl.innerHTML = BRANCHES.map(b => `
+      <label style="display:flex; align-items:center; gap:6px; font-size:0.84rem;">
+        <input type="checkbox" value="${b}" class="branch-cb"> ${b}
+      </label>
+    `).join("");
+
+    function openModal(jobId) {
+      const job = jobId ? Store.jobs().find(j => j.id === jobId) : null;
+      document.getElementById("modal-title").textContent = job ? "Edit job" : "Post a new job";
+      document.getElementById("job-id").value = jobId || "";
+      document.getElementById("f-title").value = job?.title || "";
+      document.getElementById("f-location").value = job?.location || "";
+      document.getElementById("f-type").value = job?.type || "Full-time";
+      document.getElementById("f-salary").value = job?.salary || "";
+      document.getElementById("f-mincgpa").value = job?.eligibility?.minCgpa || "";
+      document.getElementById("f-deadline").value = job?.deadline || "";
+      document.getElementById("f-description").value = job?.description || "";
+      document.querySelectorAll(".branch-cb").forEach(cb => cb.checked = job?.eligibility?.branches?.includes(cb.value) || false);
+      modal.classList.add("show");
+    }
+
+    function closeModal() { modal.classList.remove("show"); }
+    document.getElementById("modal-close").addEventListener("click", closeModal);
+    modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+
+    document.getElementById("job-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const jobId = document.getElementById("job-id").value;
+      const selectedBranches = Array.from(document.querySelectorAll(".branch-cb:checked")).map(cb => cb.value);
+
+      if (selectedBranches.length === 0) {
+        UI.toast("Select at least one eligible branch", "error");
+        return;
+      }
+
+      const jobData = {
+        companyId: company.id,
+        title: document.getElementById("f-title").value.trim(),
+        location: document.getElementById("f-location").value.trim(),
+        type: document.getElementById("f-type").value,
+        salary: parseFloat(document.getElementById("f-salary").value),
+        eligibility: {
+          minCgpa: parseFloat(document.getElementById("f-mincgpa").value),
+          branches: selectedBranches,
+        },
+        deadline: document.getElementById("f-deadline").value,
+        driveDate: document.getElementById("f-deadline").value,
+        description: document.getElementById("f-description").value.trim(),
+      };
+
+      const jobs = Store.jobs();
+      if (jobId) {
+        const idx = jobs.findIndex(j => j.id === jobId);
+        jobs[idx] = { ...jobs[idx], ...jobData };
+      } else {
+        jobs.push({ id: "j" + Date.now(), ...jobData });
+      }
+      Store.setJobs(jobs);
+
+      closeModal();
+      UI.toast(jobId ? "Job updated" : "Job posted", "success");
+      renderJobsPage();
+    });
+
+    renderJobsPage();
+  </script>
+</body>
+</html>

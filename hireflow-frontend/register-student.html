@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Registration — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="public-header">
+    <div class="container">
+      <a href="index.html" class="logo"><span class="mark">H</span> HireFlow</a>
+      <nav class="public-nav"><a href="index.html">Home</a></nav>
+    </div>
+  </header>
+
+  <main class="auth-wrapper">
+    <div class="auth-card" style="max-width:500px;">
+      <span class="auth-role-badge student">🎓 Student Registration</span>
+      <h2>Create your account</h2>
+      <p class="sub">Join HireFlow to browse drives and track applications</p>
+
+      <form id="register-form" novalidate>
+        <div class="form-row">
+          <div class="form-field">
+            <label for="name">Full name</label>
+            <input type="text" id="name" required>
+            <div class="error-msg"></div>
+          </div>
+          <div class="form-field">
+            <label for="phone">Phone</label>
+            <input type="tel" id="phone" placeholder="10-digit number" required>
+            <div class="error-msg"></div>
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="email">College email</label>
+          <input type="email" id="email" required>
+          <div class="error-msg"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label for="branch">Branch</label>
+            <select id="branch" required></select>
+          </div>
+          <div class="form-field">
+            <label for="course">Course</label>
+            <select id="course" required>
+              <option value="B.Tech">B.Tech</option>
+              <option value="M.Tech">M.Tech</option>
+              <option value="MCA">MCA</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="cgpa">Current CGPA</label>
+          <input type="number" id="cgpa" min="0" max="10" step="0.01" placeholder="e.g. 8.2" required>
+          <div class="error-msg"></div>
+        </div>
+        <div class="form-field">
+          <label for="password">Password</label>
+          <input type="password" id="password" required minlength="6">
+          <div class="error-msg"></div>
+        </div>
+        <button type="submit" class="btn btn-accent btn-block">Create account</button>
+      </form>
+
+      <p class="auth-switch">Already registered? <a href="login-student.html">Sign in</a></p>
+    </div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    const branchSelect = document.getElementById("branch");
+    branchSelect.innerHTML = BRANCHES.map(b => `<option value="${b}">${b}</option>`).join("");
+
+    document.getElementById("register-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const fields = {
+        name: document.getElementById("name"),
+        phone: document.getElementById("phone"),
+        email: document.getElementById("email"),
+        cgpa: document.getElementById("cgpa"),
+        password: document.getElementById("password"),
+      };
+      let valid = true;
+      Object.values(fields).forEach(f => f.closest(".form-field").querySelector(".error-msg").textContent = "");
+
+      if (fields.name.value.trim().length < 2) { fields.name.closest(".form-field").querySelector(".error-msg").textContent = "Enter your full name."; valid = false; }
+      if (!/^\d{10}$/.test(fields.phone.value.trim())) { fields.phone.closest(".form-field").querySelector(".error-msg").textContent = "Enter a valid 10-digit number."; valid = false; }
+      if (!/^\S+@\S+\.\S+$/.test(fields.email.value.trim())) { fields.email.closest(".form-field").querySelector(".error-msg").textContent = "Enter a valid email."; valid = false; }
+      const cgpaVal = parseFloat(fields.cgpa.value);
+      if (isNaN(cgpaVal) || cgpaVal < 0 || cgpaVal > 10) { fields.cgpa.closest(".form-field").querySelector(".error-msg").textContent = "Enter a CGPA between 0 and 10."; valid = false; }
+      if (fields.password.value.length < 6) { fields.password.closest(".form-field").querySelector(".error-msg").textContent = "Password must be at least 6 characters."; valid = false; }
+
+      if (!valid) return;
+
+      const result = Auth.registerStudent({
+        name: fields.name.value.trim(),
+        email: fields.email.value.trim(),
+        password: fields.password.value,
+        phone: fields.phone.value.trim(),
+        branch: branchSelect.value,
+        course: document.getElementById("course").value,
+        cgpa: cgpaVal,
+      });
+
+      if (result.ok) {
+        UI.toast("Account created!", "success");
+        setTimeout(() => window.location.href = "student-dashboard.html", 500);
+      } else {
+        fields.email.closest(".form-field").querySelector(".error-msg").textContent = result.error;
+        UI.toast(result.error, "error");
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interview Schedule — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="schedule-modal">
+    <div class="modal-box">
+      <div class="modal-head"><h3>Schedule interview</h3><button class="modal-close" id="modal-close">&times;</button></div>
+      <form id="schedule-form">
+        <input type="hidden" id="s-app-id">
+        <p style="font-size:0.86rem; color:var(--slate); margin-bottom:14px;" id="candidate-name-display"></p>
+        <div class="form-row">
+          <div class="form-field"><label>Date</label><input type="date" id="s-date" required></div>
+          <div class="form-field"><label>Time</label><input type="time" id="s-time" required></div>
+        </div>
+        <div class="form-field"><label>Venue (or "Online — link")</label><input type="text" id="s-venue" required></div>
+        <button type="submit" class="btn btn-accent btn-block">Schedule</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("company", "company-interviews.html");
+
+    const company = Auth.currentCompany();
+    const myJobIds = Store.jobs().filter(j => j.companyId === company.id).map(j => j.id);
+
+    function shortlistedAwaitingInterview() {
+      return Store.applications()
+        .filter(a => myJobIds.includes(a.jobId) && a.status === "shortlisted")
+        .map(a => ({ ...a, student: Store.students().find(s => s.id === a.studentId), job: Store.jobs().find(j => j.id === a.jobId) }));
+    }
+
+    function scheduledInterviews() {
+      return Store.interviews().filter(i => i.companyId === company.id).map(i => ({
+        ...i, student: Store.students().find(s => s.id === i.studentId)
+      }));
+    }
+
+    function renderPage() {
+      const pending = shortlistedAwaitingInterview();
+      const scheduled = scheduledInterviews();
+
+      document.getElementById("page-content").innerHTML = `
+        <div class="dash-topbar">
+          <div><h1>Interview Schedule</h1><p class="sub">Schedule interviews for shortlisted candidates</p></div>
+        </div>
+
+        <div class="widget-card">
+          <h3>Awaiting interview scheduling (${pending.length})</h3>
+          ${pending.length === 0 ? `<p style="color:var(--slate); font-size:0.86rem;">No shortlisted candidates waiting for a slot.</p>` : `
+            <table class="data-table">
+              <thead><tr><th>Candidate</th><th>Job</th><th></th></tr></thead>
+              <tbody>
+                ${pending.map(p => `
+                  <tr>
+                    <td class="avatar-cell"><div class="avatar-circle">${UI.initials(p.student.name)}</div>${p.student.name}</td>
+                    <td>${p.job.title}</td>
+                    <td class="table-actions"><button data-schedule="${p.id}">Schedule interview</button></td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `}
+        </div>
+
+        <div class="widget-card">
+          <h3>Scheduled interviews (${scheduled.length})</h3>
+          ${scheduled.length === 0 ? `<p style="color:var(--slate); font-size:0.86rem;">No interviews scheduled yet.</p>` : `
+            <table class="data-table">
+              <thead><tr><th>Candidate</th><th>Date</th><th>Time</th><th>Venue</th><th>Status</th></tr></thead>
+              <tbody>
+                ${scheduled.map(iv => `
+                  <tr>
+                    <td class="avatar-cell"><div class="avatar-circle">${UI.initials(iv.student.name)}</div>${iv.student.name}</td>
+                    <td>${UI.formatDate(iv.date)}</td>
+                    <td>${iv.time}</td>
+                    <td>${iv.venue}</td>
+                    <td><span class="status-pill ${iv.status === 'completed' ? 'selected' : 'interview'}">${iv.status === 'completed' ? 'Completed' : 'Scheduled'}</span></td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `}
+        </div>
+      `;
+
+      document.querySelectorAll("[data-schedule]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const app = Store.applications().find(a => a.id === btn.dataset.schedule);
+          const student = Store.students().find(s => s.id === app.studentId);
+          document.getElementById("s-app-id").value = app.id;
+          document.getElementById("candidate-name-display").textContent = `Scheduling for ${student.name} — ${Store.jobs().find(j => j.id === app.jobId).title}`;
+          document.getElementById("schedule-modal").classList.add("show");
+        });
+      });
+    }
+
+    document.getElementById("modal-close").addEventListener("click", () => document.getElementById("schedule-modal").classList.remove("show"));
+
+    document.getElementById("schedule-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const appId = document.getElementById("s-app-id").value;
+      const app = Store.applications().find(a => a.id === appId);
+
+      const interviews = Store.interviews();
+      interviews.push({
+        id: "i" + Date.now(),
+        applicationId: appId,
+        studentId: app.studentId,
+        companyId: company.id,
+        date: document.getElementById("s-date").value,
+        time: document.getElementById("s-time").value,
+        venue: document.getElementById("s-venue").value.trim(),
+        status: "scheduled",
+      });
+      Store.setInterviews(interviews);
+      Applications.updateStatus(appId, "interview");
+
+      document.getElementById("schedule-modal").classList.remove("show");
+      document.getElementById("schedule-form").reset();
+      UI.toast("Interview scheduled", "success");
+      renderPage();
+    });
+
+    renderPage();
+  </script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("student", "student-profile.html");
+
+    const student = Auth.currentStudent();
+
+    function renderProfile() {
+      document.getElementById("page-content").innerHTML = `
+        <div class="dash-topbar">
+          <div><h1>My Profile</h1><p class="sub">Keep your details current — companies see this when reviewing applications</p></div>
+        </div>
+
+        <div class="profile-section-card">
+          <h3>Personal Information</h3>
+          <form id="personal-form">
+            <div class="form-row">
+              <div class="form-field"><label>Full name</label><input type="text" id="p-name" value="${student.name}"></div>
+              <div class="form-field"><label>Phone</label><input type="tel" id="p-phone" value="${student.phone}"></div>
+            </div>
+            <div class="form-field"><label>Email</label><input type="email" value="${student.email}" disabled style="opacity:0.6;"></div>
+            <button type="submit" class="btn btn-accent btn-sm">Save changes</button>
+          </form>
+        </div>
+
+        <div class="profile-section-card">
+          <h3>Academic Details</h3>
+          <form id="academic-form">
+            <div class="form-row">
+              <div class="form-field">
+                <label>Branch</label>
+                <select id="p-branch">${BRANCHES.map(b => `<option ${b === student.branch ? "selected" : ""}>${b}</option>`).join("")}</select>
+              </div>
+              <div class="form-field">
+                <label>Course</label>
+                <select id="p-course">
+                  ${["B.Tech","M.Tech","MCA"].map(c => `<option ${c === student.course ? "selected" : ""}>${c}</option>`).join("")}
+                </select>
+              </div>
+            </div>
+            <div class="form-field" style="max-width:200px;"><label>CGPA</label><input type="number" id="p-cgpa" min="0" max="10" step="0.01" value="${student.cgpa}"></div>
+            <button type="submit" class="btn btn-accent btn-sm">Save changes</button>
+          </form>
+        </div>
+
+        <div class="profile-section-card">
+          <h3>Skills</h3>
+          <div class="tag-input-list" id="skills-list"></div>
+          <div style="display:flex; gap:10px; margin-top:14px;">
+            <input type="text" id="new-skill" placeholder="Add a skill (e.g. Python)" style="flex:1; padding:10px 14px; border:1px solid rgba(15,42,74,0.15); border-radius:8px; font-family:inherit; font-size:0.88rem;">
+            <button class="btn btn-primary btn-sm" id="add-skill-btn">Add</button>
+          </div>
+        </div>
+      `;
+
+      renderSkills();
+
+      document.getElementById("personal-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        student.name = document.getElementById("p-name").value.trim() || student.name;
+        student.phone = document.getElementById("p-phone").value.trim();
+        saveStudent();
+        UI.toast("Personal info updated", "success");
+      });
+
+      document.getElementById("academic-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        student.branch = document.getElementById("p-branch").value;
+        student.course = document.getElementById("p-course").value;
+        student.cgpa = parseFloat(document.getElementById("p-cgpa").value) || student.cgpa;
+        saveStudent();
+        UI.toast("Academic details updated", "success");
+      });
+
+      document.getElementById("add-skill-btn").addEventListener("click", () => {
+        const input = document.getElementById("new-skill");
+        const skill = input.value.trim();
+        if (!skill) return;
+        if (!student.skills.includes(skill)) student.skills.push(skill);
+        input.value = "";
+        saveStudent();
+        renderSkills();
+      });
+    }
+
+    function renderSkills() {
+      document.getElementById("skills-list").innerHTML = student.skills.map((skill, i) => `
+        <span class="skill-tag">${skill} <button data-remove-skill="${i}">×</button></span>
+      `).join("") || `<p style="color:var(--slate); font-size:0.84rem;">No skills added yet.</p>`;
+
+      document.querySelectorAll("[data-remove-skill]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          student.skills.splice(parseInt(btn.dataset.removeSkill), 1);
+          saveStudent();
+          renderSkills();
+        });
+      });
+    }
+
+    function saveStudent() {
+      // Recalculate a simple profile-completion score whenever something changes
+      let score = 20; // base for having an account
+      if (student.phone) score += 15;
+      if (student.skills.length > 0) score += 20;
+      if (student.resumeName) score += 30;
+      if (student.cgpa) score += 15;
+      student.profileComplete = Math.min(100, score);
+
+      const students = Store.students();
+      const idx = students.findIndex(s => s.id === student.id);
+      if (idx >= 0) students[idx] = student;
+      Store.setStudents(students);
+    }
+
+    if (student) renderProfile();
+  </script>
+</body>
+</html>

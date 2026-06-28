@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("student", "student-dashboard.html");
+
+    const student = Auth.currentStudent();
+    const myApps = student ? Applications.forStudent(student.id) : [];
+    const upcoming = myApps.filter(a => a.status === "interview").length;
+    const notifications = Store.notifications().slice(0, 3);
+
+    const recommendedJobs = student
+      ? Jobs.all().filter(j => Jobs.isEligible(j, student) && !Applications.hasApplied(student.id, j.id)).slice(0, 3)
+      : [];
+
+    document.getElementById("page-content").innerHTML = `
+      <div class="dash-topbar">
+        <div>
+          <h1>Welcome back, ${student ? student.name.split(" ")[0] : "Student"}</h1>
+          <p class="sub">Here's what's happening with your placements</p>
+        </div>
+      </div>
+
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="icon-wrap" style="background:#E8F3FF;">📋</div>
+          <div class="label">Total Applications</div>
+          <div class="value">${myApps.length}</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon-wrap" style="background:#FFF1E0;">🗓️</div>
+          <div class="label">Upcoming Interviews</div>
+          <div class="value">${upcoming}</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon-wrap" style="background:#E6F4ED;">🎯</div>
+          <div class="label">Job Recommendations</div>
+          <div class="value">${recommendedJobs.length}</div>
+        </div>
+        <div class="stat-card">
+          <div class="icon-wrap" style="background:#EDE7FB;">✅</div>
+          <div class="label">Profile Completion</div>
+          <div class="value">${student ? student.profileComplete : 0}%</div>
+        </div>
+      </div>
+
+      <div class="widget-grid-2">
+        <div class="widget-card">
+          <h3>Recommended for you</h3>
+          ${recommendedJobs.length === 0 ? `<p style="color:var(--slate); font-size:0.86rem;">No new eligible jobs right now — check back soon.</p>` :
+            recommendedJobs.map(job => `
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 0; border-bottom:1px solid rgba(15,42,74,0.06);">
+                <div>
+                  <div style="font-weight:600; font-size:0.92rem;">${job.title}</div>
+                  <div style="font-size:0.8rem; color:var(--slate);">${job.company.name} · ${job.location} · ${UI.formatCurrency(job.salary)}</div>
+                </div>
+                <a href="student-job-detail.html?id=${job.id}" class="btn btn-outline btn-sm">View</a>
+              </div>
+            `).join("")
+          }
+          <a href="student-jobs.html" class="btn btn-primary btn-sm btn-block" style="margin-top:14px;">Browse all jobs</a>
+        </div>
+
+        <div class="widget-card">
+          <h3>Recent notifications</h3>
+          ${notifications.map(n => `
+            <div class="notif-item">
+              <div class="notif-icon ${n.type}">${ {drive:"🚀", deadline:"⏰", interview:"🗓️", result:"🎉"}[n.type] }</div>
+              <div class="notif-content">
+                <h4>${n.title}</h4>
+                <div class="time">${UI.formatDate(n.date)}</div>
+              </div>
+            </div>
+          `).join("")}
+          <a href="student-notifications.html" class="btn btn-outline btn-sm btn-block" style="margin-top:14px;">View all</a>
+        </div>
+      </div>
+
+      ${!student || student.profileComplete < 100 ? `
+        <div class="widget-card" style="border-left:4px solid var(--amber);">
+          <h3>Complete your profile</h3>
+          <p style="font-size:0.86rem; color:var(--slate); margin-bottom:14px;">A complete profile (skills, resume, academic details) helps you qualify for more drives and look better to recruiters.</p>
+          <div class="progress-bar-track" style="margin-bottom:14px;">
+            <div class="progress-bar-fill" style="width:${student ? student.profileComplete : 0}%;"></div>
+          </div>
+          <a href="student-profile.html" class="btn btn-accent btn-sm">Complete profile</a>
+        </div>
+      ` : ""}
+    `;
+  </script>
+</body>
+</html>

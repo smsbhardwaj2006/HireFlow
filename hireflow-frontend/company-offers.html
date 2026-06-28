@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offer Letters — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("company", "company-offers.html");
+
+    const company = Auth.currentCompany();
+    const myJobIds = Store.jobs().filter(j => j.companyId === company.id).map(j => j.id);
+
+    function readyForOffer() {
+      return Store.applications()
+        .filter(a => myJobIds.includes(a.jobId) && (a.status === "interview" || a.status === "selected"))
+        .map(a => ({ ...a, student: Store.students().find(s => s.id === a.studentId), job: Store.jobs().find(j => j.id === a.jobId) }));
+    }
+
+    function renderPage() {
+      const candidates = readyForOffer();
+
+      document.getElementById("page-content").innerHTML = `
+        <div class="dash-topbar">
+          <div><h1>Offer Letters</h1><p class="sub">Publish results for interviewed candidates</p></div>
+        </div>
+
+        ${candidates.length === 0 ? `<div class="empty-state"><div class="emoji">📨</div><h3>No candidates ready for results yet</h3><p>Candidates appear here once they've completed an interview.</p></div>` : `
+          <table class="data-table">
+            <thead><tr><th>Candidate</th><th>Job</th><th>Package</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              ${candidates.map(c => `
+                <tr>
+                  <td class="avatar-cell"><div class="avatar-circle">${UI.initials(c.student.name)}</div>${c.student.name}</td>
+                  <td>${c.job.title}</td>
+                  <td>${UI.formatCurrency(c.job.salary)}</td>
+                  <td><span class="status-pill ${c.status === 'selected' ? 'selected' : 'interview'}">${c.status === 'selected' ? 'Selected' : 'Awaiting result'}</span></td>
+                  <td class="table-actions">
+                    ${c.status !== "selected" ? `
+                      <button data-publish-select="${c.id}">Mark Selected</button>
+                      <button class="danger" data-publish-reject="${c.id}">Mark Rejected</button>
+                    ` : `<button data-view-offer="${c.id}">View offer letter</button>`}
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `}
+      `;
+
+      document.querySelectorAll("[data-publish-select]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          Applications.updateStatus(btn.dataset.publishSelect, "selected");
+          UI.toast("Result published — candidate selected!", "success");
+          renderPage();
+        });
+      });
+      document.querySelectorAll("[data-publish-reject]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          Applications.updateStatus(btn.dataset.publishReject, "rejected");
+          UI.toast("Result published", "success");
+          renderPage();
+        });
+      });
+      document.querySelectorAll("[data-view-offer]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const c = candidates.find(c => c.id === btn.dataset.viewOffer);
+          UI.toast(`Demo mode: would generate offer letter PDF for ${c.student.name}`, "success");
+        });
+      });
+    }
+
+    renderPage();
+  </script>
+</body>
+</html>

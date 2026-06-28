@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Students — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="student-modal">
+    <div class="modal-box">
+      <div class="modal-head"><h3 id="modal-title">Add student</h3><button class="modal-close" id="modal-close">&times;</button></div>
+      <form id="student-form">
+        <input type="hidden" id="st-id">
+        <div class="form-row">
+          <div class="form-field"><label>Full name</label><input type="text" id="st-name" required></div>
+          <div class="form-field"><label>Email</label><input type="email" id="st-email" required></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field"><label>Branch</label><select id="st-branch">${BRANCHES.map(b=>`<option>${b}</option>`).join("")}</select></div>
+          <div class="form-field"><label>CGPA</label><input type="number" id="st-cgpa" min="0" max="10" step="0.01" required></div>
+        </div>
+        <div class="form-field"><label>Phone</label><input type="tel" id="st-phone"></div>
+        <button type="submit" class="btn btn-accent btn-block">Save student</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("officer", "officer-students.html");
+
+    function renderPage() {
+      const query = (document.getElementById("search-input")?.value || "").trim().toLowerCase();
+      let students = Store.students();
+      if (query) students = students.filter(s => s.name.toLowerCase().includes(query) || s.branch.toLowerCase().includes(query));
+
+      document.getElementById("page-content").innerHTML = `
+        <div class="dash-topbar">
+          <div><h1>Manage Students</h1><p class="sub">${Store.students().length} students registered</p></div>
+          <button class="btn btn-accent" id="add-student-btn">+ Add student</button>
+        </div>
+
+        <div class="toolbar">
+          <div class="toolbar-search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="search-input" placeholder="Search by name or branch...">
+          </div>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Name</th><th>Branch</th><th>CGPA</th><th>Profile</th><th>Applications</th><th></th></tr></thead>
+          <tbody>
+            ${students.map(s => `
+              <tr>
+                <td class="avatar-cell"><div class="avatar-circle">${UI.initials(s.name)}</div><div><div style="font-weight:600;">${s.name}</div><div style="font-size:0.76rem; color:var(--slate);">${s.email}</div></div></td>
+                <td>${s.branch}</td>
+                <td>${s.cgpa}</td>
+                <td>${s.profileComplete}%</td>
+                <td>${Store.applications().filter(a => a.studentId === s.id).length}</td>
+                <td class="table-actions">
+                  <button data-edit="${s.id}">Edit</button>
+                  <button class="danger" data-delete="${s.id}">Delete</button>
+                </td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+
+      const searchEl = document.getElementById("search-input");
+      searchEl.value = query;
+      searchEl.addEventListener("input", renderPage);
+      searchEl.focus();
+      searchEl.setSelectionRange(query.length, query.length);
+
+      document.getElementById("add-student-btn").addEventListener("click", () => openModal());
+      document.querySelectorAll("[data-edit]").forEach(btn => btn.addEventListener("click", () => openModal(btn.dataset.edit)));
+      document.querySelectorAll("[data-delete]").forEach(btn => btn.addEventListener("click", () => {
+        if (!confirm("Remove this student record?")) return;
+        Store.setStudents(Store.students().filter(s => s.id !== btn.dataset.delete));
+        UI.toast("Student removed", "success");
+        renderPage();
+      }));
+    }
+
+    function openModal(studentId) {
+      const student = studentId ? Store.students().find(s => s.id === studentId) : null;
+      document.getElementById("modal-title").textContent = student ? "Edit student" : "Add student";
+      document.getElementById("st-id").value = studentId || "";
+      document.getElementById("st-name").value = student?.name || "";
+      document.getElementById("st-email").value = student?.email || "";
+      document.getElementById("st-branch").value = student?.branch || BRANCHES[0];
+      document.getElementById("st-cgpa").value = student?.cgpa || "";
+      document.getElementById("st-phone").value = student?.phone || "";
+      document.getElementById("student-modal").classList.add("show");
+    }
+
+    document.getElementById("modal-close").addEventListener("click", () => document.getElementById("student-modal").classList.remove("show"));
+
+    document.getElementById("student-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const id = document.getElementById("st-id").value;
+      const data = {
+        name: document.getElementById("st-name").value.trim(),
+        email: document.getElementById("st-email").value.trim(),
+        branch: document.getElementById("st-branch").value,
+        cgpa: parseFloat(document.getElementById("st-cgpa").value),
+        phone: document.getElementById("st-phone").value.trim(),
+      };
+
+      const students = Store.students();
+      if (id) {
+        const idx = students.findIndex(s => s.id === id);
+        students[idx] = { ...students[idx], ...data };
+      } else {
+        students.push({ id: "s" + Date.now(), ...data, course: "B.Tech", skills: [], resumeName: null, profileComplete: 20 });
+      }
+      Store.setStudents(students);
+
+      document.getElementById("student-modal").classList.remove("show");
+      UI.toast(id ? "Student updated" : "Student added", "success");
+      renderPage();
+    });
+
+    renderPage();
+  </script>
+</body>
+</html>

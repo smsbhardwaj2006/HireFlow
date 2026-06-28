@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interview Schedule — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("student", "student-interviews.html");
+
+    const student = Auth.currentStudent();
+    const myInterviews = student ? Store.interviews().filter(i => i.studentId === student.id).map(i => {
+      const company = Store.companies().find(c => c.id === i.companyId);
+      return { ...i, company };
+    }) : [];
+
+    document.getElementById("page-content").innerHTML = `
+      <div class="dash-topbar">
+        <div><h1>Interview Schedule</h1><p class="sub">Your upcoming and past interviews</p></div>
+      </div>
+
+      ${myInterviews.length === 0 ? `
+        <div class="empty-state"><div class="emoji">🗓️</div><h3>No interviews scheduled</h3><p>Once a company shortlists you, your interview details will appear here.</p></div>
+      ` : myInterviews.map(iv => `
+        <div class="widget-card" style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; gap:16px; align-items:center;">
+            <div class="avatar-circle" style="width:46px; height:46px; font-size:1.1rem; background:var(--navy);">${iv.company.logo}</div>
+            <div>
+              <h3 style="margin-bottom:4px;">${iv.company.name}</h3>
+              <div style="font-size:0.84rem; color:var(--slate);">📍 ${iv.venue}</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700; font-size:0.95rem;">${UI.formatDate(iv.date)}</div>
+            <div style="font-size:0.84rem; color:var(--slate); margin-bottom:8px;">${iv.time}</div>
+            <span class="status-pill ${iv.status === 'completed' ? 'selected' : 'interview'}">${iv.status === 'completed' ? 'Completed' : 'Scheduled'}</span>
+          </div>
+        </div>
+      `).join("")}
+    `;
+  </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Companies — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("officer", "officer-companies.html");
+
+    function renderPage() {
+      const companies = Store.companies();
+      document.getElementById("page-content").innerHTML = `
+        <div class="dash-topbar">
+          <div><h1>Manage Companies</h1><p class="sub">${companies.length} companies registered</p></div>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Company</th><th>Website</th><th>Jobs posted</th><th>Status</th><th></th></tr></thead>
+          <tbody>
+            ${companies.map(c => `
+              <tr>
+                <td class="avatar-cell"><div class="avatar-circle">${c.logo}</div><div><div style="font-weight:600;">${c.name}</div><div style="font-size:0.76rem; color:var(--slate);">${c.email}</div></div></td>
+                <td>${c.website || "—"}</td>
+                <td>${Store.jobs().filter(j => j.companyId === c.id).length}</td>
+                <td><span class="status-pill ${c.status === 'approved' ? 'approved' : 'pending'}">${c.status === 'approved' ? 'Approved' : 'Pending'}</span></td>
+                <td class="table-actions">
+                  ${c.status === 'pending' ? `<button data-approve="${c.id}">Approve</button>` : ""}
+                  <button class="danger" data-remove="${c.id}">Remove</button>
+                </td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+
+      document.querySelectorAll("[data-approve]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const companies = Store.companies();
+          const c = companies.find(c => c.id === btn.dataset.approve);
+          c.status = "approved";
+          Store.setCompanies(companies);
+          UI.toast(`${c.name} approved`, "success");
+          renderPage();
+        });
+      });
+      document.querySelectorAll("[data-remove]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          if (!confirm("Remove this company and its job postings?")) return;
+          const id = btn.dataset.remove;
+          Store.setCompanies(Store.companies().filter(c => c.id !== id));
+          Store.setJobs(Store.jobs().filter(j => j.companyId !== id));
+          UI.toast("Company removed", "success");
+          renderPage();
+        });
+      });
+    }
+
+    renderPage();
+  </script>
+</body>
+</html>

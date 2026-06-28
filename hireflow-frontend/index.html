@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HireFlow — College Placement Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="public-header">
+    <div class="container">
+      <a href="index.html" class="logo"><span class="mark">H</span> HireFlow</a>
+      <nav class="public-nav">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+      <div class="public-nav-actions">
+        <a href="login-officer.html" class="btn btn-outline btn-sm">Officer Login</a>
+        <a href="register-student.html" class="btn btn-accent btn-sm">Get Started</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="hero-eyebrow">● Campus Placement, Simplified</div>
+        <h1>One platform for placements — students, companies, and officers</h1>
+        <p>Replace spreadsheets and email threads with a single system to post jobs, track applications, schedule interviews, and manage the entire placement lifecycle.</p>
+        <div class="hero-actions">
+          <a href="register-student.html" class="btn btn-accent">I'm a Student</a>
+          <a href="register-company.html" class="btn btn-outline" style="border-color:rgba(255,255,255,0.4); color:#fff;">I'm a Company</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="role-cards">
+        <div class="role-card student">
+          <div class="icon">🎓</div>
+          <h3>For Students</h3>
+          <p>Build your profile, upload your resume, browse eligible drives, and track every application in one place.</p>
+          <a href="login-student.html" class="btn btn-primary btn-sm btn-block">Student Login</a>
+        </div>
+        <div class="role-card company">
+          <div class="icon">🏢</div>
+          <h3>For Companies</h3>
+          <p>Post openings, set eligibility criteria, review applicants, and schedule interviews without back-and-forth emails.</p>
+          <a href="login-company.html" class="btn btn-primary btn-sm btn-block">Company Login</a>
+        </div>
+        <div class="role-card officer">
+          <div class="icon">🛡️</div>
+          <h3>For Placement Officers</h3>
+          <p>Oversee the whole placement cycle — manage students and companies, run drives, and generate reports.</p>
+          <a href="login-officer.html" class="btn btn-primary btn-sm btn-block">Officer Login</a>
+        </div>
+      </div>
+    </div>
+
+    <section class="section">
+      <div class="container">
+        <div class="stats-strip">
+          <div class="stat"><div class="stat-num">3</div><div class="stat-label">Active Roles</div></div>
+          <div class="stat"><div class="stat-num">120+</div><div class="stat-label">Students Onboarded</div></div>
+          <div class="stat"><div class="stat-num">35+</div><div class="stat-label">Partner Companies</div></div>
+          <div class="stat"><div class="stat-num">68%</div><div class="stat-label">Placement Rate</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head center">
+          <h2>Everything placements need, in one place</h2>
+          <p>From job posting to offer letter, every step is tracked and visible to the right people.</p>
+        </div>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="icon">📋</div>
+            <h3>Centralized Job Portal</h3>
+            <p>Companies post roles with clear eligibility criteria; students see only what they qualify for.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">📊</div>
+            <h3>Live Application Tracking</h3>
+            <p>Every application moves through a visible pipeline — applied, reviewed, shortlisted, interviewed, selected.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">🗓️</div>
+            <h3>Interview Scheduling</h3>
+            <p>Companies schedule interviews directly; students see dates, times, and venues without chasing emails.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">🔔</div>
+            <h3>Centralized Notifications</h3>
+            <p>Drive announcements, deadline reminders, and results reach every student automatically.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">📈</div>
+            <h3>Placement Analytics</h3>
+            <p>Officers get real-time statistics and department-wise reports without manual spreadsheet work.</p>
+          </div>
+          <div class="feature-card">
+            <div class="icon">🔒</div>
+            <h3>Role-Based Access</h3>
+            <p>Students, companies, and officers each see exactly what's relevant to them — nothing more.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="logo">HireFlow</div>
+          <p>A College Placement Management System built as a full-stack portfolio project — Django/MySQL backend in progress, this is the frontend prototype.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Students</h4>
+          <a href="login-student.html">Student Login</a>
+          <a href="register-student.html">Register</a>
+        </div>
+        <div class="footer-col">
+          <h4>Companies</h4>
+          <a href="login-company.html">Company Login</a>
+          <a href="register-company.html">Register</a>
+        </div>
+        <div class="footer-col">
+          <h4>Officers</h4>
+          <a href="login-officer.html">Officer Login</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 HireFlow. Portfolio project, not a live institution.</span>
+        <span>Built with HTML, CSS &amp; JavaScript</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

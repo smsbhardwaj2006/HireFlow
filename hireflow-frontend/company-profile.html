@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Company Profile — HireFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <div class="dash-shell" id="dash-shell-root">
+    <main class="dash-main">
+      <div id="page-content"></div>
+    </main>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script>
+    Store.ensureSeeded();
+    renderDashboardShell("company", "company-profile.html");
+
+    const company = Auth.currentCompany();
+    const statusClass = { approved: "approved", pending: "pending" };
+
+    document.getElementById("page-content").innerHTML = `
+      <div class="dash-topbar">
+        <div><h1>Company Profile</h1><p class="sub">This is what students see when they view your job postings</p></div>
+        <span class="status-pill ${statusClass[company.status]}">${company.status === "approved" ? "Approved" : "Pending approval"}</span>
+      </div>
+
+      <div class="profile-section-card" style="max-width:600px;">
+        <h3>Company Details</h3>
+        <form id="profile-form">
+          <div class="form-field"><label>Company name</label><input type="text" id="f-name" value="${company.name}"></div>
+          <div class="form-field"><label>Email</label><input type="email" value="${company.email}" disabled style="opacity:0.6;"></div>
+          <div class="form-field"><label>Website</label><input type="text" id="f-website" value="${company.website || ''}"></div>
+          <div class="form-field"><label>Description</label><textarea id="f-description" rows="4">${company.description}</textarea></div>
+          <button type="submit" class="btn btn-accent btn-sm">Save changes</button>
+        </form>
+      </div>
+    `;
+
+    document.getElementById("profile-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      company.name = document.getElementById("f-name").value.trim() || company.name;
+      company.website = document.getElementById("f-website").value.trim();
+      company.description = document.getElementById("f-description").value.trim();
+
+      const companies = Store.companies();
+      const idx = companies.findIndex(c => c.id === company.id);
+      if (idx >= 0) companies[idx] = company;
+      Store.setCompanies(companies);
+
+      UI.toast("Profile updated", "success");
+    });
+  </script>
+</body>
+</html>
