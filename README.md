@@ -1,2 +1,2 @@
 # HireFlow
-Full Stack College Placement Management System Website
+Full Stack College Placement Management System
