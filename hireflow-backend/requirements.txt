@@ -7,7 +7,7 @@ python-dotenv==1.0.1
 
 # MySQL support for production (DJANGO_ENV=production) — not needed for
 # local SQLite development, but listed so production installs work too.
-mysqlclient==2.2.4
+psycopg2-binary==2.9.9
 dj-database-url==2.2.0
 
 # Deployment
